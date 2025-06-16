@@ -8,7 +8,27 @@
   #game { display:block; margin:0 auto; background:#000; }
   #hud { position:absolute; top:5px; left:5px; font-size:20px; }
   #lives { position:absolute; top:5px; right:5px; font-size:24px; }
-  #muteBtn { position:absolute; left:50%; top:10px; transform:translateX(-50%); cursor:pointer; user-select:none; }
+  #muteBtn {
+    position:absolute;
+    left:50%;
+    top:10px;
+    transform:translateX(-50%);
+    cursor:pointer;
+    user-select:none;
+  }
+  #muteBtn.mobile {
+    position:relative;
+    left:auto;
+    top:auto;
+    transform:none;
+    width:70px;
+    height:70px;
+    font-size:28px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-right:20px;
+  }
   #muteBtn:focus { outline:none; }
   #overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); color:#fff; display:none; align-items:center; justify-content:center; flex-direction:column; }
   #scoreboard { margin-top:10px; }
@@ -101,6 +121,9 @@ let mute = false;
 const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints>0;
 if(isMobile){
   controlPanel.style.display = 'flex';
+  controlPanel.style.alignItems = 'center';
+  controlPanel.insertBefore(muteBtn, controlPanel.firstChild);
+  muteBtn.classList.add('mobile');
   function resize(){
     const panelH = controlPanel.offsetHeight || 0;
     canvas.width = window.innerWidth;
