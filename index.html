@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>Assdestroyed</title>
 <style>
   body { margin:0; font-family:sans-serif; background:#000; color:#fff; }
@@ -70,31 +71,31 @@
 
   @media (pointer: coarse) {
     #controls {
-      width:420px;
-      height:420px;
+      width:480px;
+      height:480px;
     }
     #controls button {
-      width:120px;
-      height:120px;
-      font-size:48px;
+      width:140px;
+      height:140px;
+      font-size:56px;
     }
-    #leftBtn { top:160px; }
-    #rightBtn { top:160px; }
-    #upBtn { left:160px; }
-    #downBtn { left:160px; }
+    #leftBtn { top:180px; }
+    #rightBtn { top:180px; }
+    #upBtn { left:180px; }
+    #downBtn { left:180px; }
     #fireBtn {
-      width:160px;
-      height:160px;
-      font-size:64px;
-      left:160px;
-      top:160px;
+      width:180px;
+      height:180px;
+      font-size:72px;
+      left:180px;
+      top:180px;
     }
     #muteBtn.mobile {
-      width:120px;
+      width:140px;
       margin-left:10px;
       margin-right:40px;
-      height:120px;
-      font-size:48px;
+      height:140px;
+      font-size:56px;
     }
   }
 </style>
@@ -149,7 +150,7 @@ let gameOver = false;
 let mute = false;
 
 const scale = window.matchMedia('(pointer: coarse)').matches ||
-  /Mobi|Android|iP(ad|hone)/.test(navigator.userAgent) ? 1.8 : 1;
+  /Mobi|Android|iP(ad|hone)/.test(navigator.userAgent) ? 2.2 : 1;
 
 const isMobile = scale > 1;
 if(isMobile){
