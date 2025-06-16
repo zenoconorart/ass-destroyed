@@ -27,7 +27,7 @@
     display:flex;
     align-items:center;
     justify-content:center;
-    margin-right:20px;
+    margin-left:10px; margin-right:40px;
   }
   #muteBtn:focus { outline:none; }
   #overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); color:#fff; display:none; align-items:center; justify-content:center; flex-direction:column; }
@@ -70,29 +70,31 @@
 
   @media (pointer: coarse) {
     #controls {
-      width:360px;
-      height:360px;
+      width:420px;
+      height:420px;
     }
     #controls button {
-      width:100px;
-      height:100px;
-      font-size:40px;
+      width:120px;
+      height:120px;
+      font-size:48px;
     }
-    #leftBtn { top:130px; }
-    #rightBtn { top:130px; }
-    #upBtn { left:130px; }
-    #downBtn { left:130px; }
+    #leftBtn { top:160px; }
+    #rightBtn { top:160px; }
+    #upBtn { left:160px; }
+    #downBtn { left:160px; }
     #fireBtn {
-      width:130px;
-      height:130px;
-      font-size:56px;
-      left:130px;
-      top:130px;
+      width:160px;
+      height:160px;
+      font-size:64px;
+      left:160px;
+      top:160px;
     }
     #muteBtn.mobile {
-      width:100px;
-      height:100px;
-      font-size:40px;
+      width:120px;
+      margin-left:10px;
+      margin-right:40px;
+      height:120px;
+      font-size:48px;
     }
   }
 </style>
@@ -147,7 +149,7 @@ let gameOver = false;
 let mute = false;
 
 const scale = window.matchMedia('(pointer: coarse)').matches ||
-  /Mobi|Android|iP(ad|hone)/.test(navigator.userAgent) ? 1.5 : 1;
+  /Mobi|Android|iP(ad|hone)/.test(navigator.userAgent) ? 1.8 : 1;
 
 const isMobile = scale > 1;
 if(isMobile){
