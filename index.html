@@ -13,9 +13,36 @@
   #overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); color:#fff; display:none; align-items:center; justify-content:center; flex-direction:column; }
   #scoreboard { margin-top:10px; }
   button { margin-top:5px; }
-  #controls { position:fixed; bottom:10px; left:0; right:0; display:none; text-align:center; }
-  #controls button { width:60px; height:60px; margin:5px; font-size:24px; }
+  #controls {
+    position:fixed;
+    bottom:10px;
+    left:50%;
+    transform:translateX(-50%);
+    width:220px;
+    height:220px;
+    display:none;
+  }
+  #controls button {
+    position:absolute;
+    width:60px;
+    height:60px;
+    font-size:24px;
+  }
   #controls button:focus { outline:none; }
+  #leftBtn { left:0; top:80px; }
+  #rightBtn { right:0; top:80px; }
+  #upBtn { left:80px; top:0; }
+  #downBtn { left:80px; bottom:0; }
+  #fireBtn {
+    left:80px;
+    top:80px;
+    width:80px;
+    height:80px;
+    background:red;
+    color:#fff;
+    border-radius:50%;
+    font-size:28px;
+  }
 </style>
 </head>
 <body>
@@ -34,7 +61,7 @@
   <button id="rightBtn">➡️</button>
   <button id="upBtn">⬆️</button>
   <button id="downBtn">⬇️</button>
-  <button id="fireBtn">💦</button>
+  <button id="fireBtn">🔴</button>
 </div>
 <script>
 (() => {
@@ -219,7 +246,7 @@ class Bullet {
 
 function spawnPeaches(){
   peaches=[];
-  let count = level + 2; // 3,4,5
+  let count = level + 3; // 4,5,6
   let speedMul = 1;
   if(level===1){ count += 2; speedMul = 1.2; }
   for(let i=0;i<count;i++){
