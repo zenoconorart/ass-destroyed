@@ -13,35 +13,39 @@
   #overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); color:#fff; display:none; align-items:center; justify-content:center; flex-direction:column; }
   #scoreboard { margin-top:10px; }
   button { margin-top:5px; }
-  #controls {
+  #controlPanel {
     position:fixed;
-    bottom:10px;
-    left:50%;
-    transform:translateX(-50%);
-    width:220px;
-    height:220px;
+    left:0;
+    right:0;
+    bottom:40px;
     display:none;
+    justify-content:center;
+  }
+  #controls {
+    position:relative;
+    width:260px;
+    height:260px;
   }
   #controls button {
     position:absolute;
-    width:60px;
-    height:60px;
-    font-size:24px;
+    width:70px;
+    height:70px;
+    font-size:28px;
   }
   #controls button:focus { outline:none; }
-  #leftBtn { left:0; top:80px; }
-  #rightBtn { right:0; top:80px; }
-  #upBtn { left:80px; top:0; }
-  #downBtn { left:80px; bottom:0; }
+  #leftBtn { left:0; top:95px; }
+  #rightBtn { right:0; top:95px; }
+  #upBtn { left:95px; top:0; }
+  #downBtn { left:95px; bottom:0; }
   #fireBtn {
-    left:80px;
-    top:80px;
-    width:80px;
-    height:80px;
+    left:95px;
+    top:95px;
+    width:90px;
+    height:90px;
     background:red;
     color:#fff;
     border-radius:50%;
-    font-size:28px;
+    font-size:32px;
   }
 </style>
 </head>
@@ -56,12 +60,14 @@
   <button id="submitBtn">Submit</button>
   <div id="scoreboard"></div>
 </div>
-<div id="controls">
-  <button id="leftBtn">⬅️</button>
-  <button id="rightBtn">➡️</button>
-  <button id="upBtn">⬆️</button>
-  <button id="downBtn">⬇️</button>
-  <button id="fireBtn">🔴</button>
+<div id="controlPanel">
+  <div id="controls">
+    <button id="leftBtn">⬅️</button>
+    <button id="rightBtn">➡️</button>
+    <button id="upBtn">⬆️</button>
+    <button id="downBtn">⬇️</button>
+    <button id="fireBtn">🔴</button>
+  </div>
 </div>
 <script>
 (() => {
@@ -75,6 +81,7 @@ const nameInput = document.getElementById('nameInput');
 const submitBtn = document.getElementById('submitBtn');
 const scoreboardDiv = document.getElementById('scoreboard');
 const muteBtn = document.getElementById('muteBtn');
+const controlPanel = document.getElementById('controlPanel');
 const controlsDiv = document.getElementById('controls');
 
 let width = canvas.width;
@@ -93,9 +100,11 @@ let mute = false;
 
 const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints>0;
 if(isMobile){
+  controlPanel.style.display = 'flex';
   function resize(){
+    const panelH = controlPanel.offsetHeight || 0;
     canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.height = window.innerHeight - panelH - 20;
     width = canvas.width;
     height = canvas.height;
     initStars();
