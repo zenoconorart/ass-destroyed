@@ -388,8 +388,8 @@ function sortScores(arr){
 
 function displayScores(scores){
   scoreboardDiv.innerHTML = '<h3>Scoreboard</h3>' + scores.map(s => {
-    const kills = Math.floor((s.score||0)/10);
-    return `${s.name}: Level ${s.level} - ${kills} kills - ${s.time}s`;
+    const time = s.time.toFixed ? s.time.toFixed(1) : s.time;
+    return `${s.name}: Level ${s.level} - ${s.score} pts - ${time}s`;
   }).join('<br>');
 }
 
