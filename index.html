@@ -45,12 +45,20 @@ let keys = {};
 let bullets = [];
 let peaches = [];
 let explosions = [];
+let stars = [];
 let level = 1;
 let score = 0;
 let lives = 3;
 let startTime = Date.now();
 let gameOver = false;
 let mute = false;
+
+function initStars(count=100){
+  stars=[];
+  for(let i=0;i<count;i++){
+    stars.push({x:Math.random()*width,y:Math.random()*height,phase:Math.random()*Math.PI*2});
+  }
+}
 
 // Audio
 const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -150,9 +158,9 @@ class Player {
 const player = new Player();
 
 class Peach {
-  constructor(x,y,size,stage){
+  constructor(x,y,size,stage,speedMul=1){
     this.x=x; this.y=y; this.size=size; this.stage=stage; // stage: 2 big,1 normal,0 small
-    const angle=Math.random()*Math.PI*2; const speed=1+Math.random()*1.5;
+    const angle=Math.random()*Math.PI*2; const speed=(1+Math.random()*1.5)*speedMul;
     this.vx=Math.cos(angle)*speed; this.vy=Math.sin(angle)*speed;
   }
   update(){
@@ -185,9 +193,12 @@ class Bullet {
 
 function spawnPeaches(){
   peaches=[];
-  const count=level+2; // 3,4,5
+  let count = level + 2; // 3,4,5
+  let speedMul = 1;
+  if(level===1){ count += 2; speedMul = 1.2; }
   for(let i=0;i<count;i++){
-    peaches.push(new Peach(Math.random()*width,Math.random()*height, level>1?60:40, level>1?2:1));
+    peaches.push(new Peach(Math.random()*width,Math.random()*height,
+      level>1?60:40, level>1?2:1, speedMul));
   }
 }
 
@@ -213,6 +224,18 @@ function explode(x,y,count=5){
       max:30
     });
   }
+}
+
+function updateStars(){
+  stars.forEach(s=>{ s.phase += 0.05 + Math.random()*0.02; });
+}
+function drawStars(){
+  stars.forEach(s=>{
+    const alpha = 0.5 + Math.sin(s.phase)*0.5;
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.fillRect(s.x,s.y,2,2);
+  });
+  ctx.fillStyle = '#fff';
 }
 
 function updateExplosions(){
@@ -249,6 +272,8 @@ function crash(){
 function update(){
   if(gameOver) return;
   ctx.clearRect(0,0,width,height);
+  updateStars();
+  drawStars();
   player.update();
   bullets.forEach(b=>b.update());
   bullets=bullets.filter(b=>!b.dead);
@@ -292,6 +317,7 @@ function startGame(){
   level=1; score=0; lives=3; gameOver=false; startTime=Date.now();
   player.x=width/2; player.y=height/2; player.vx=player.vy=0; bullets=[]; explosions=[];
   stopEngine();
+  initStars();
   spawnPeaches();
   overlay.style.display='none'; startMusic(); update();
 }
