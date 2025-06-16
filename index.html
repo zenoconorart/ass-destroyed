@@ -241,7 +241,8 @@ function update(){
 
 function endGame(){
   gameOver=true; stopMusic(); stopEngine();
-  finalDiv.textContent=`Game Over! Time: ${((Date.now()-startTime)/1000).toFixed(1)}s`;
+  const t = ((Date.now()-startTime)/1000).toFixed(1);
+  finalDiv.textContent=`Game Over! Time: ${t}s  Score: ${score}`;
   overlay.style.display='flex';
 }
 
@@ -258,13 +259,42 @@ document.addEventListener('keyup',e=>{ keys[e.key]=false; });
 muteBtn.addEventListener('click',()=>{
   mute=!mute; muteBtn.textContent=mute?'🔕':'🔔'; muteBtn.blur(); if(mute) stopMusic(); else startMusic(); });
 submitBtn.addEventListener('click',()=>{
-  const name=nameInput.value||'Anon'; const time=((Date.now()-startTime)/1000).toFixed(1); let scores=JSON.parse(localStorage.getItem('scores')||'[]'); scores.push({name,time:parseFloat(time)}); scores.sort((a,b)=>a.time-b.time); localStorage.setItem('scores',JSON.stringify(scores)); displayScores(scores); startGame(); });
+  const name = nameInput.value || 'Anon';
+  const time = parseFloat(((Date.now()-startTime)/1000).toFixed(1));
+  const completed = level > 3;
+  let scores = JSON.parse(localStorage.getItem('scores')||'[]');
+  scores.push({name, time, score, completed});
+  scores = sortScores(scores);
+  localStorage.setItem('scores', JSON.stringify(scores));
+  displayScores(scores);
+  startGame();
+});
 
-function displayScores(scores){
-  scoreboardDiv.innerHTML='<h3>Scoreboard</h3>'+scores.map(s=>`${s.name}: ${s.time}s`).join('<br>');
+function sortScores(arr){
+  const anyCompleted = arr.some(s => s.completed);
+  return arr.sort((a,b)=>{
+    if(anyCompleted){
+      if(a.time === b.time) return (b.score||0) - (a.score||0);
+      return a.time - b.time;
+    }
+    if((a.score||0) === (b.score||0)) return a.time - b.time;
+    return (b.score||0) - (a.score||0);
+  });
 }
 
-window.addEventListener('load',()=>{ const scores=JSON.parse(localStorage.getItem('scores')||'[]'); displayScores(scores); startGame(); });
+function displayScores(scores){
+  scoreboardDiv.innerHTML = '<h3>Scoreboard</h3>' + scores.map(s => {
+    const sc = s.score ?? 0;
+    return `${s.name}: ${sc} pts - ${s.time}s`;
+  }).join('<br>');
+}
+
+window.addEventListener('load',()=>{
+  let scores = JSON.parse(localStorage.getItem('scores')||'[]');
+  scores = sortScores(scores);
+  displayScores(scores);
+  startGame();
+});
 })();
 </script>
 </body>
