@@ -13,6 +13,9 @@
   #overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); color:#fff; display:none; align-items:center; justify-content:center; flex-direction:column; }
   #scoreboard { margin-top:10px; }
   button { margin-top:5px; }
+  #controls { position:fixed; bottom:10px; left:0; right:0; display:none; text-align:center; }
+  #controls button { width:60px; height:60px; margin:5px; font-size:24px; }
+  #controls button:focus { outline:none; }
 </style>
 </head>
 <body>
@@ -26,6 +29,13 @@
   <button id="submitBtn">Submit</button>
   <div id="scoreboard"></div>
 </div>
+<div id="controls">
+  <button id="leftBtn">⬅️</button>
+  <button id="rightBtn">➡️</button>
+  <button id="upBtn">⬆️</button>
+  <button id="downBtn">⬇️</button>
+  <button id="fireBtn">💦</button>
+</div>
 <script>
 (() => {
 const canvas = document.getElementById('game');
@@ -38,6 +48,7 @@ const nameInput = document.getElementById('nameInput');
 const submitBtn = document.getElementById('submitBtn');
 const scoreboardDiv = document.getElementById('scoreboard');
 const muteBtn = document.getElementById('muteBtn');
+const controlsDiv = document.getElementById('controls');
 
 let width = canvas.width;
 let height = canvas.height;
@@ -52,6 +63,21 @@ let lives = 3;
 let startTime = Date.now();
 let gameOver = false;
 let mute = false;
+
+const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints>0;
+if(isMobile){
+  function resize(){
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    width = canvas.width;
+    height = canvas.height;
+    initStars();
+  }
+  window.addEventListener('resize',resize);
+  resize();
+  controlsDiv.style.display = 'block';
+  document.body.style.touchAction = 'none';
+}
 
 function initStars(count=100){
   stars=[];
@@ -324,6 +350,19 @@ function startGame(){
 
 document.addEventListener('keydown',e=>{ keys[e.key]=true; if(e.key===' '&&bullets.length<8&&!gameOver){ bullets.push(new Bullet(player.x,player.y,player.angle)); bulletSound(); } });
 document.addEventListener('keyup',e=>{ keys[e.key]=false; });
+
+if(isMobile){
+  function bind(btnId,key,fire){
+    const btn=document.getElementById(btnId);
+    btn.addEventListener('touchstart',e=>{e.preventDefault(); if(fire){ if(bullets.length<8&&!gameOver){ bullets.push(new Bullet(player.x,player.y,player.angle)); bulletSound(); }} else { keys[key]=true; }});
+    if(!fire) btn.addEventListener('touchend',e=>{e.preventDefault(); keys[key]=false;});
+  }
+  bind('leftBtn','ArrowLeft');
+  bind('rightBtn','ArrowRight');
+  bind('upBtn','ArrowUp');
+  bind('downBtn','ArrowDown');
+  bind('fireBtn',' ',true);
+}
 
 muteBtn.addEventListener('click',()=>{
   mute=!mute; muteBtn.textContent=mute?'🔕':'🔔'; muteBtn.blur(); if(mute) stopMusic(); else startMusic(); });
