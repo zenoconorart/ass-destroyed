@@ -1,1 +1,271 @@
-index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Assdestroyed</title>
+<style>
+  body { margin:0; font-family:sans-serif; background:#000; color:#fff; }
+  #game { display:block; margin:0 auto; background:#000; }
+  #hud { position:absolute; top:5px; left:5px; font-size:20px; }
+  #lives { position:absolute; top:5px; right:5px; font-size:24px; }
+  #muteBtn { position:absolute; left:50%; top:10px; transform:translateX(-50%); cursor:pointer; user-select:none; }
+  #muteBtn:focus { outline:none; }
+  #overlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); color:#fff; display:none; align-items:center; justify-content:center; flex-direction:column; }
+  #scoreboard { margin-top:10px; }
+  button { margin-top:5px; }
+</style>
+</head>
+<body>
+<canvas id="game" width="800" height="600"></canvas>
+<div id="hud"></div>
+<div id="lives"></div>
+<div id="muteBtn" tabindex="0">🔔</div>
+<div id="overlay">
+  <div id="final"></div>
+  <input id="nameInput" placeholder="Your name">
+  <button id="submitBtn">Submit</button>
+  <div id="scoreboard"></div>
+</div>
+<script>
+(() => {
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const hud = document.getElementById('hud');
+const livesDiv = document.getElementById('lives');
+const overlay = document.getElementById('overlay');
+const finalDiv = document.getElementById('final');
+const nameInput = document.getElementById('nameInput');
+const submitBtn = document.getElementById('submitBtn');
+const scoreboardDiv = document.getElementById('scoreboard');
+const muteBtn = document.getElementById('muteBtn');
+
+let width = canvas.width;
+let height = canvas.height;
+let keys = {};
+let bullets = [];
+let peaches = [];
+let explosions = [];
+let level = 1;
+let score = 0;
+let lives = 3;
+let startTime = Date.now();
+let gameOver = false;
+let mute = false;
+
+// Audio
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+const audioCtx = new AudioCtx();
+
+function playTone(freq, duration, volume=0.3, type='sine') {
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.value = freq;
+  gain.gain.value = volume;
+  osc.connect(gain).connect(audioCtx.destination);
+  osc.start();
+  osc.stop(audioCtx.currentTime + duration);
+}
+
+let engineOsc = null;
+function startEngine() {
+  if(engineOsc) return;
+  engineOsc = audioCtx.createOscillator();
+  engineOsc.type = 'sawtooth';
+  engineOsc.frequency.value = 100;
+  const gain = audioCtx.createGain();
+  gain.gain.value = 0.05;
+  engineOsc.connect(gain).connect(audioCtx.destination);
+  engineOsc.start();
+}
+function stopEngine() {
+  if(engineOsc) { engineOsc.stop(); engineOsc=null; }
+}
+
+let musicInterval = null;
+function startMusic() {
+  if(mute) return;
+  if(musicInterval) return;
+  const notes = [261.6, 329.6, 392.0, 523.2];
+  let i=0;
+  musicInterval = setInterval(()=>{
+    playTone(notes[i%notes.length],0.4,0.1,'triangle');
+    i++;
+  },400);
+}
+function stopMusic() {
+  clearInterval(musicInterval); musicInterval=null;
+}
+
+function bulletSound(){ playTone(880,0.1,0.2); }
+function fartSound(){ playTone(220,0.2,0.3,'square'); }
+function crashSound(){ playTone(110,0.5,0.5,'sawtooth'); }
+function levelJingle(){ playTone(660,0.3,0.3); setTimeout(()=>playTone(880,0.3,0.3),300); }
+
+// Game objects
+class Player {
+  constructor(){
+    this.x = width/2; this.y = height/2;
+    this.angle = 0; this.vx=0; this.vy=0;
+  }
+  update(){
+    if(keys['ArrowLeft']) this.angle -= 0.05;
+    if(keys['ArrowRight']) this.angle += 0.05;
+    if(keys['ArrowUp']) { this.vx += Math.cos(this.angle)*0.1; this.vy += Math.sin(this.angle)*0.1; startEngine(); }
+    else if(keys['ArrowDown']) { this.vx -= Math.cos(this.angle)*0.05; this.vy -= Math.sin(this.angle)*0.05; }
+    else { stopEngine(); }
+    this.vx*=0.99; this.vy*=0.99;
+    this.x += this.vx; this.y += this.vy;
+    if(this.x<0) this.x+=width; if(this.x>width) this.x-=width;
+    if(this.y<0) this.y+=height; if(this.y>height) this.y-=height;
+  }
+  draw(){
+    ctx.save();
+    ctx.translate(this.x,this.y);
+    ctx.rotate(this.angle);
+    ctx.font='30px serif';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.fillText('🍆',0,0);
+    ctx.restore();
+  }
+}
+const player = new Player();
+
+class Peach {
+  constructor(x,y,size,stage){
+    this.x=x; this.y=y; this.size=size; this.stage=stage; // stage: 2 big,1 normal,0 small
+    const angle=Math.random()*Math.PI*2; const speed=1+Math.random()*1.5;
+    this.vx=Math.cos(angle)*speed; this.vy=Math.sin(angle)*speed;
+  }
+  update(){
+    this.x+=this.vx; this.y+=this.vy;
+    if(this.x<0) this.x+=width; if(this.x>width) this.x-=width;
+    if(this.y<0) this.y+=height; if(this.y>height) this.y-=height;
+  }
+  draw(){
+    ctx.font=`${this.size}px serif`;
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('🍑',this.x,this.y);
+  }
+}
+
+class Bullet {
+  constructor(x,y,angle){
+    this.x=x; this.y=y; this.angle=angle; this.life=0;
+    const speed=5; this.vx=Math.cos(angle)*speed; this.vy=Math.sin(angle)*speed;
+  }
+  update(){
+    this.x+=this.vx; this.y+=this.vy; this.life+=1;
+    if(this.x<0||this.x>width||this.y<0||this.y>height||this.life>100) this.dead=true;
+  }
+  draw(){
+    ctx.font='20px serif';
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('💦',this.x,this.y);
+  }
+}
+
+function spawnPeaches(){
+  peaches=[];
+  const count=level+2; // 3,4,5
+  for(let i=0;i<count;i++){
+    peaches.push(new Peach(Math.random()*width,Math.random()*height, level>1?60:40, level>1?2:1));
+  }
+}
+
+function splitPeach(peach){
+  if(peach.stage>1){
+    peaches.push(new Peach(peach.x,peach.y,40,1));
+    peaches.push(new Peach(peach.x,peach.y,40,1));
+  }else if(peach.stage===1 && level>=3){
+    for(let i=0;i<3;i++) peaches.push(new Peach(peach.x,peach.y,20,0));
+  }
+}
+
+function explode(x,y){
+  for(let i=0;i<5;i++) explosions.push({x:x+Math.random()*30-15,y:y+Math.random()*30-15,life:0});
+}
+
+function updateExplosions(){
+  explosions=explosions.filter(ex=>ex.life<20);
+  explosions.forEach(ex=>ex.life++);
+}
+function drawExplosions(){
+  ctx.font='15px serif';
+  explosions.forEach(ex=>{ctx.fillText('💩',ex.x,ex.y);});
+}
+
+function checkCollisions(){
+  peaches.forEach((p,pi)=>{
+    bullets.forEach((b,bi)=>{
+      const dx=p.x-b.x, dy=p.y-b.y; const dist=Math.hypot(dx,dy);
+      if(dist<p.size/2){ bullets.splice(bi,1); fartSound(); score+=10; explode(p.x,p.y); splitPeach(p); peaches.splice(pi,1); }
+    });
+    const dxp=p.x-player.x, dyp=p.y-player.y; const distp=Math.hypot(dxp,dyp);
+    if(distp<p.size/2+15){ crash(); }
+  });
+}
+
+function crash(){
+  crashSound();
+  lives--; if(lives<=0){ endGame(); } else { player.x=width/2; player.y=height/2; player.vx=player.vy=0; }
+}
+
+function update(){
+  if(gameOver) return;
+  ctx.clearRect(0,0,width,height);
+  player.update();
+  bullets.forEach(b=>b.update());
+  bullets=bullets.filter(b=>!b.dead);
+  peaches.forEach(p=>p.update());
+  updateExplosions();
+  checkCollisions();
+
+  player.draw();
+  peaches.forEach(p=>p.draw());
+  bullets.forEach(b=>b.draw());
+  drawExplosions();
+
+  hud.textContent=`Level ${level} | Score ${score} | Time ${((Date.now()-startTime)/1000).toFixed(1)}s`;
+  livesDiv.textContent='🍆'.repeat(lives);
+
+  if(peaches.length===0){
+    levelJingle();
+    level++;
+    if(level>3){ endGame(); return; }
+    spawnPeaches();
+  }
+  requestAnimationFrame(update);
+}
+
+function endGame(){
+  gameOver=true; stopMusic(); stopEngine();
+  finalDiv.textContent=`Game Over! Time: ${((Date.now()-startTime)/1000).toFixed(1)}s`;
+  overlay.style.display='flex';
+}
+
+function startGame(){
+  level=1; score=0; lives=3; gameOver=false; startTime=Date.now();
+  player.x=width/2; player.y=height/2; player.vx=player.vy=0; bullets=[]; explosions=[];
+  spawnPeaches();
+  overlay.style.display='none'; startMusic(); update();
+}
+
+document.addEventListener('keydown',e=>{ keys[e.key]=true; if(e.key===' '&&bullets.length<8&&!gameOver){ bullets.push(new Bullet(player.x,player.y,player.angle)); bulletSound(); } });
+document.addEventListener('keyup',e=>{ keys[e.key]=false; });
+
+muteBtn.addEventListener('click',()=>{
+  mute=!mute; muteBtn.textContent=mute?'🔕':'🔔'; muteBtn.blur(); if(mute) stopMusic(); else startMusic(); });
+submitBtn.addEventListener('click',()=>{
+  const name=nameInput.value||'Anon'; const time=((Date.now()-startTime)/1000).toFixed(1); let scores=JSON.parse(localStorage.getItem('scores')||'[]'); scores.push({name,time:parseFloat(time)}); scores.sort((a,b)=>a.time-b.time); localStorage.setItem('scores',JSON.stringify(scores)); displayScores(scores); startGame(); });
+
+function displayScores(scores){
+  scoreboardDiv.innerHTML='<h3>Scoreboard</h3>'+scores.map(s=>`${s.name}: ${s.time}s`).join('<br>');
+}
+
+window.addEventListener('load',()=>{ const scores=JSON.parse(localStorage.getItem('scores')||'[]'); displayScores(scores); startGame(); });
+})();
+</script>
+</body>
+</html>
