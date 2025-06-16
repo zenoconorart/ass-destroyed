@@ -372,7 +372,7 @@ submitBtn.addEventListener('click',()=>{
   const lvl = Math.min(level,3);
   let scores = JSON.parse(localStorage.getItem('scores')||'[]');
   scores.push({name, time, score, level:lvl});
-  scores = sortScores(scores);
+  scores = sortScores(scores).slice(0,10);
   localStorage.setItem('scores', JSON.stringify(scores));
   displayScores(scores);
   startGame();
@@ -395,7 +395,8 @@ function sortScores(arr){
 }
 
 function displayScores(scores){
-  scoreboardDiv.innerHTML = '<h3>Scoreboard</h3>' + scores.map(s => {
+  const top = scores.slice(0,10);
+  scoreboardDiv.innerHTML = '<h3>Scoreboard</h3>' + top.map(s => {
     const time = s.time.toFixed ? s.time.toFixed(1) : s.time;
     return `${s.name}: Level ${s.level} - ${time}s - ${s.score} pts`;
   }).join('<br>');
@@ -403,7 +404,7 @@ function displayScores(scores){
 
 window.addEventListener('load',()=>{
   let scores = JSON.parse(localStorage.getItem('scores')||'[]');
-  scores = sortScores(scores);
+  scores = sortScores(scores).slice(0,10);
   displayScores(scores);
   startGame();
 });
