@@ -118,7 +118,8 @@ let startTime = Date.now();
 let gameOver = false;
 let mute = false;
 
-const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints>0;
+const isMobile = window.matchMedia('(pointer: coarse)').matches ||
+  /Mobi|Android|iP(ad|hone)/.test(navigator.userAgent);
 if(isMobile){
   controlPanel.style.display = 'flex';
   controlPanel.style.alignItems = 'center';
@@ -128,6 +129,8 @@ if(isMobile){
     const panelH = controlPanel.offsetHeight || 0;
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight - panelH - 20;
+    canvas.style.width = canvas.width + 'px';
+    canvas.style.height = canvas.height + 'px';
     width = canvas.width;
     height = canvas.height;
     initStars();
