@@ -68,15 +68,16 @@ function playTone(freq, duration, volume=0.3, type='sine') {
 }
 
 let engineOsc = null;
-function startEngine() {
-  if(engineOsc) return;
-  engineOsc = audioCtx.createOscillator();
-  engineOsc.type = 'sawtooth';
-  engineOsc.frequency.value = 100;
-  const gain = audioCtx.createGain();
-  gain.gain.value = 0.05;
-  engineOsc.connect(gain).connect(audioCtx.destination);
-  engineOsc.start();
+function startEngine(back=false) {
+  if(!engineOsc){
+    engineOsc = audioCtx.createOscillator();
+    engineOsc.type = 'sawtooth';
+    const gain = audioCtx.createGain();
+    gain.gain.value = 0.05;
+    engineOsc.connect(gain).connect(audioCtx.destination);
+    engineOsc.start();
+  }
+  engineOsc.frequency.value = back ? 80 : 100;
 }
 function stopEngine() {
   if(engineOsc) { engineOsc.stop(); engineOsc=null; }
@@ -111,9 +112,17 @@ class Player {
   update(){
     if(keys['ArrowLeft']) this.angle -= 0.05;
     if(keys['ArrowRight']) this.angle += 0.05;
-    if(keys['ArrowUp']) { this.vx += Math.cos(this.angle)*0.1; this.vy += Math.sin(this.angle)*0.1; startEngine(); }
-    else if(keys['ArrowDown']) { this.vx -= Math.cos(this.angle)*0.05; this.vy -= Math.sin(this.angle)*0.05; }
-    else { stopEngine(); }
+    if(keys['ArrowUp']) {
+      this.vx += Math.cos(this.angle)*0.1;
+      this.vy += Math.sin(this.angle)*0.1;
+      startEngine(false);
+    } else if(keys['ArrowDown']) {
+      this.vx -= Math.cos(this.angle)*0.05;
+      this.vy -= Math.sin(this.angle)*0.05;
+      startEngine(true);
+    } else {
+      stopEngine();
+    }
     this.vx*=0.99; this.vy*=0.99;
     this.x += this.vx; this.y += this.vy;
     if(this.x<0) this.x+=width; if(this.x>width) this.x-=width;
@@ -183,17 +192,32 @@ function splitPeach(peach){
   }
 }
 
-function explode(x,y){
-  for(let i=0;i<5;i++) explosions.push({x:x+Math.random()*30-15,y:y+Math.random()*30-15,life:0});
+function explode(x,y,count=5){
+  for(let i=0;i<count;i++) {
+    const angle = Math.random()*Math.PI*2;
+    const speed = Math.random()*3+1;
+    explosions.push({
+      x,
+      y,
+      vx: Math.cos(angle)*speed,
+      vy: Math.sin(angle)*speed,
+      life:0,
+      max:30
+    });
+  }
 }
 
 function updateExplosions(){
-  explosions=explosions.filter(ex=>ex.life<20);
-  explosions.forEach(ex=>ex.life++);
+  explosions=explosions.filter(ex=>ex.life<ex.max);
+  explosions.forEach(ex=>{ ex.x+=ex.vx; ex.y+=ex.vy; ex.life++; });
 }
 function drawExplosions(){
   ctx.font='15px serif';
-  explosions.forEach(ex=>{ctx.fillText('💩',ex.x,ex.y);});
+  explosions.forEach(ex=>{
+    ctx.globalAlpha = 1 - ex.life/ex.max;
+    ctx.fillText('💩',ex.x,ex.y);
+  });
+  ctx.globalAlpha = 1;
 }
 
 function checkCollisions(){
@@ -209,6 +233,8 @@ function checkCollisions(){
 
 function crash(){
   crashSound();
+  explode(player.x, player.y, 20);
+  stopEngine();
   lives--; if(lives<=0){ endGame(); } else { player.x=width/2; player.y=height/2; player.vx=player.vy=0; }
 }
 
@@ -249,6 +275,7 @@ function endGame(){
 function startGame(){
   level=1; score=0; lives=3; gameOver=false; startTime=Date.now();
   player.x=width/2; player.y=height/2; player.vx=player.vy=0; bullets=[]; explosions=[];
+  stopEngine();
   spawnPeaches();
   overlay.style.display='none'; startMusic(); update();
 }
