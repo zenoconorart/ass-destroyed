@@ -380,8 +380,16 @@ submitBtn.addEventListener('click',()=>{
 
 function sortScores(arr){
   return arr.sort((a,b)=>{
-    if(a.level !== b.level) return b.level - a.level;
+    const aComp = a.level >= 3;
+    const bComp = b.level >= 3;
+    if(aComp && bComp){
+      if(a.time !== b.time) return a.time - b.time;
+      return (b.score||0) - (a.score||0);
+    }
+    if(aComp) return -1;
+    if(bComp) return 1;
     if((a.score||0) !== (b.score||0)) return (b.score||0) - (a.score||0);
+    if(a.level !== b.level) return b.level - a.level;
     return a.time - b.time;
   });
 }
@@ -389,7 +397,7 @@ function sortScores(arr){
 function displayScores(scores){
   scoreboardDiv.innerHTML = '<h3>Scoreboard</h3>' + scores.map(s => {
     const time = s.time.toFixed ? s.time.toFixed(1) : s.time;
-    return `${s.name}: Level ${s.level} - ${s.score} pts - ${time}s`;
+    return `${s.name}: Level ${s.level} - ${time}s - ${s.score} pts`;
   }).join('<br>');
 }
 
