@@ -87,12 +87,12 @@ let musicInterval = null;
 function startMusic() {
   if(mute) return;
   if(musicInterval) return;
-  const notes = [261.6, 329.6, 392.0, 523.2];
+  const notes = [220.0, 246.9, 261.6, 293.7];
   let i=0;
   musicInterval = setInterval(()=>{
-    playTone(notes[i%notes.length],0.4,0.1,'triangle');
+    playTone(notes[i%notes.length],0.4,0.08,'triangle');
     i++;
-  },400);
+  },600);
 }
 function stopMusic() {
   clearInterval(musicInterval); musicInterval=null;
@@ -101,7 +101,15 @@ function stopMusic() {
 function bulletSound(){ playTone(880,0.1,0.2); }
 function fartSound(){ playTone(220,0.2,0.3,'square'); }
 function crashSound(){ playTone(110,0.5,0.5,'sawtooth'); }
-function levelJingle(){ playTone(660,0.3,0.3); setTimeout(()=>playTone(880,0.3,0.3),300); }
+function levelJingle(){
+  playTone(660,0.3,0.3);
+  setTimeout(()=>playTone(880,0.3,0.3),300);
+}
+function victoryJingle(){
+  playTone(523.2,0.3,0.3);
+  setTimeout(()=>playTone(659.2,0.3,0.3),300);
+  setTimeout(()=>playTone(783.9,0.4,0.3),600);
+}
 
 // Game objects
 class Player {
@@ -266,9 +274,17 @@ function update(){
 }
 
 function endGame(){
-  gameOver=true; stopMusic(); stopEngine();
+  gameOver=true;
+  stopMusic();
+  stopEngine();
   const t = ((Date.now()-startTime)/1000).toFixed(1);
-  finalDiv.textContent=`Game Over! Time: ${t}s  Score: ${score}`;
+  const completed = level>3;
+  if(completed) {
+    victoryJingle();
+    finalDiv.textContent=`Game Completed! Time: ${t}s  Score: ${score}`;
+  } else {
+    finalDiv.textContent=`Game Over! Time: ${t}s  Score: ${score}`;
+  }
   overlay.style.display='flex';
 }
 
@@ -288,9 +304,9 @@ muteBtn.addEventListener('click',()=>{
 submitBtn.addEventListener('click',()=>{
   const name = nameInput.value || 'Anon';
   const time = parseFloat(((Date.now()-startTime)/1000).toFixed(1));
-  const completed = level > 3;
+  const lvl = Math.min(level,3);
   let scores = JSON.parse(localStorage.getItem('scores')||'[]');
-  scores.push({name, time, score, completed});
+  scores.push({name, time, score, level:lvl});
   scores = sortScores(scores);
   localStorage.setItem('scores', JSON.stringify(scores));
   displayScores(scores);
@@ -298,21 +314,17 @@ submitBtn.addEventListener('click',()=>{
 });
 
 function sortScores(arr){
-  const anyCompleted = arr.some(s => s.completed);
   return arr.sort((a,b)=>{
-    if(anyCompleted){
-      if(a.time === b.time) return (b.score||0) - (a.score||0);
-      return a.time - b.time;
-    }
-    if((a.score||0) === (b.score||0)) return a.time - b.time;
-    return (b.score||0) - (a.score||0);
+    if(a.level !== b.level) return b.level - a.level;
+    if((a.score||0) !== (b.score||0)) return (b.score||0) - (a.score||0);
+    return a.time - b.time;
   });
 }
 
 function displayScores(scores){
   scoreboardDiv.innerHTML = '<h3>Scoreboard</h3>' + scores.map(s => {
-    const sc = s.score ?? 0;
-    return `${s.name}: ${sc} pts - ${s.time}s`;
+    const kills = Math.floor((s.score||0)/10);
+    return `${s.name}: Level ${s.level} - ${kills} kills - ${s.time}s`;
   }).join('<br>');
 }
 
